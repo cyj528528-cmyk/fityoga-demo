@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>FitYoga Now - Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    
+    /* SVG图标 */
+    .icon { width: 1em; height: 1em; vertical-align: middle; fill: currentColor; }
+    
+    /* 手机容器 */
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: #fff;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.4);
+      flex-shrink: 0;
+    }
+    
+    /* 状态栏 */
+    .status-bar {
+      height: 44px;
+      background: linear-gradient(135deg, #4CAF50, #81C784);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 24px;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    /* 页面容器 */
+    .page-container {
+      height: calc(812px - 44px);
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .page {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+      overflow-y: auto;
+    }
+    
+    .page.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+    .page.hidden-left { transform: translateX(-30%); opacity: 0; pointer-events: none; }
+    
+    /* 通用按钮 */
+    .btn {
+      padding: 14px 24px;
+      border-radius: 25px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      flex: 1;
+    }
+    .btn-primary { background: linear-gradient(135deg, #4CAF50, #66BB6A); color: white; }
+    .btn-primary:active { transform: scale(0.96); }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-outline { background: transparent; border: 2px solid #4CAF50; color: #4CAF50; }
+    
+    /* OB进度条 */
+    .ob-progress {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      z-index: 10;
+    }
+    .ob-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.4);
+      transition: all 0.3s ease;
+    }
+    .ob-dot.active { width: 24px; background: white; }
+    
+    /* OB按钮 */
+    .ob-nav {
+      padding: 20px 24px;
+      display: flex;
+      gap: 12px;
+      margin-top: auto;
+    }
+    
+    /* ====== 欢迎页 ====== */
+    .welcome-page {
+      background: linear-gradient(180deg, #4CAF50 0%, #81C784 55%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+    }
+    .welcome-logo {
+      width: 100px;
+      height: 100px;
+      background: white;
+      border-radius: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(76,175,80,0.3);
+    }
+    .welcome-logo svg { width: 50px; height: 50px; fill: #4CAF50; }
+    .welcome-title { font-size: 28px; font-weight: 700; color: white; margin-bottom: 10px; text-align: center; }
+    .welcome-subtitle { font-size: 15px; color: rgba(255,255,255,0.9); text-align: center; line-height: 1.8; padding: 0 20px; }
+    .welcome-btn { margin-top: 50px; width: calc(100% - 48px); }
+    
+    /* ====== 选择页 ====== */
+    .ob-page {
+      padding: 70px 24px 100px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .ob-header { text-align: center; margin-bottom: 24px; flex-shrink: 0; }
+    .ob-header h2 { font-size: 22px; color: #333; margin-bottom: 6px; }
+    .ob-header p { font-size: 13px; color: #999; }
+    .ob-options { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+    .ob-option {
+      padding: 14px 16px;
+      border: 2px solid #eee;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .ob-option:active { transform: scale(0.98); }
+    .ob-option.selected { border-color: #4CAF50; background: #E8F5E9; }
+    .ob-option svg { width: 24px; height: 24px; fill: #4CAF50; flex-shrink: 0; }
+    .ob-option span { font-size: 14px; color: #333; }
+    
+    /* ====== 信任背书页 ====== */
+    .trust-page {
+      background: linear-gradient(135deg, #E8F5E9, #fff);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100%;
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .trust-icon svg { width: 70px; height: 70px; fill: #4CAF50; margin-bottom: 20px; }
+    .trust-number { font-size: 48px; font-weight: 700; color: #4CAF50; margin-bottom: 6px; }
+    .trust-label { font-size: 16px; color: #666; margin-bottom: 16px; }
+    .trust-desc { font-size: 13px; color: #999; line-height: 1.6; }
+    
+    /* ====== 推荐页 ====== */
+    .recommend-page {
+      background: #fff;
+      padding: 70px 24px 100px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .recommend-cards { display: flex; flex-direction: column; gap: 14px; flex: 1; overflow-y: auto; }
+    .recommend-card {
+      background: linear-gradient(135deg, #E8F5E9, #fff);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .recommend-card:active { transform: scale(0.98); }
+    .recommend-thumb {
+      width: 70px;
+      height: 70px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .recommend-thumb svg { width: 28px; height: 28px; fill: white; }
+    .recommend-info h4 { font-size: 14px; color: #333; margin-bottom: 3px; }
+    .recommend-info p { font-size: 11px; color: #999; margin-bottom: 6px; }
+    .recommend-tag { 
+      display: inline-block; 
+      padding: 3px 8px; 
+      background: #4CAF50; 
+      color: white; 
+      border-radius: 8px; 
+      font-size: 10px; 
+    }
+    
+    /* ====== 订阅墙 ====== */
+    .paywall-page {
+      background: linear-gradient(180deg, #4CAF50 0%, #E8F5E9 60%);
+      padding: 70px 24px 30px;
+      min-height: 100%;
+      text-align: center;
+    }
+    .paywall-header { margin-bottom: 24px; }
+    .paywall-header h2 { font-size: 22px; color: white; margin-bottom: 6px; }
+    .paywall-header p { font-size: 13px; color: rgba(255,255,255,0.9); }
+    .paywall-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .paywall-feature {
+      background: white;
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .paywall-feature svg { width: 24px; height: 24px; fill: #4CAF50; margin-bottom: 6px; }
+    .paywall-feature span { font-size: 11px; color: #333; }
+    .paywall-plans { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .paywall-plan {
+      background: white;
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+    }
+    .paywall-plan.selected { border-color: #4CAF50; background: #E8F5E9; }
+    .paywall-plan.recommended { position: relative; }
+    .paywall-plan .badge {
+      position: absolute;
+      top: -8px;
+      right: 12px;
+      background: #FF9800;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 10px;
+    }
+    .plan-check { 
+      width: 22px; 
+      height: 22px; 
+      border: 2px solid #ddd;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .paywall-plan.selected .plan-check { background: #4CAF50; border-color: #4CAF50; }
+    .plan-info { flex: 1; text-align: left; }
+    .plan-info h4 { font-size: 14px; color: #333; margin-bottom: 2px; }
+    .plan-info p { font-size: 10px; color: #999; }
+    .plan-price { font-size: 20px; font-weight: 700; color: #4CAF50; }
+    .plan-price small { font-size: 11px; color: #999; font-weight: 400; }
+    .paywall-trial {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .paywall-trial h4 { font-size: 15px; color: #333; margin-bottom: 6px; }
+    .paywall-trial p { font-size: 11px; color: #999; margin-bottom: 12px; }
+    .btn-trial {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4CAF50, #66BB6A);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .paywall-skip { font-size: 12px; color: #999; cursor: pointer; }
+    
+    /* ====== 首页 ====== */
+    .home-page {
+      background: #f5f5f5;
+      padding-bottom: 90px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100%;
+    }
+    .home-header {
+      background: linear-gradient(135deg, #4CAF50, #81C784);
+      padding: 16px;
+      flex-shrink: 0;
+    }
+    .home-greeting { color: rgba(255,255,255,0.9); font-size: 13px; margin-bottom: 3px; }
+    .home-title { color: white; font-size: 20px; font-weight: 700; }
+    .home-stats { display: flex; gap: 12px; margin-top: 14px; }
+    .stat-card {
+      flex: 1;
+      background: rgba(255,255,255,0.2);
+      border-radius: 14px;
+      padding: 12px 8px;
+      text-align: center;
+    }
+    .stat-number { color: white; font-size: 18px; font-weight: 700; }
+    .stat-label { color: rgba(255,255,255,0.8); font-size: 9px; margin-top: 3px; }
+    .home-content { padding: 14px; flex: 1; overflow-y: auto; }
+    
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .section-title span { color: #4CAF50; font-size: 11px; cursor: pointer; }
+    
+    .today-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      cursor: pointer;
+    }
+    .today-thumb {
+      width: 65px;
+      height: 65px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .today-thumb svg { width: 28px; height: 28px; fill: white; }
+    .today-thumb .play-icon {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .today-thumb .play-icon svg { width: 10px; height: 10px; fill: #4CAF50; }
+    .today-info h4 { font-size: 13px; color: #333; margin-bottom: 3px; }
+    .today-info p { font-size: 10px; color: #999; margin-bottom: 5px; }
+    .today-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .today-meta span { font-size: 10px; color: #999; }
+    .today-meta svg { width: 12px; height: 12px; fill: #4CAF50; margin-right: 2px; }
+    .tag-green { background: #E8F5E9; color: #4CAF50; padding: 2px 6px; border-radius: 6px; font-size: 9px; }
+    
+    .course-scroll {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+      margin: 0 -14px;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+    .course-scroll::-webkit-scrollbar { display: none; }
+    .course-card {
+      min-width: 120px;
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .course-card:active { transform: scale(0.98); }
+    .course-img {
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .course-img svg { width: 26px; height: 26px; fill: white; }
+    .course-img .duration {
+      position: absolute;
+      bottom: 5px;
+      right: 5px;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 2px 5px;
+      border-radius: 5px;
+      font-size: 9px;
+    }
+    .course-body { padding: 10px; }
+    .course-body h5 { font-size: 11px; color: #333; margin-bottom: 2px; line-height: 1.3; }
+    .course-body p { font-size: 9px; color: #999; }
+    
+    /* ====== 课程页 ====== */
+    .courses-page { background: #f5f5f5; padding-bottom: 90px; display: flex; flex-direction: column; min-height: 100%; }
+    .courses-header { background: white; padding: 16px; border-bottom: 1px solid #eee; flex-shrink: 0; }
+    .courses-header h2 { font-size: 22px; color: #333; margin-bottom: 12px; }
+    .filter-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+    .filter-tab {
+      padding: 6px 14px;
+      background: #f5f5f5;
+      border-radius: 18px;
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .filter-tab.active { background: #4CAF50; color: white; }
+    .courses-list { padding: 14px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+    .course-list-item {
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+    }
+    .course-list-item:active { transform: scale(0.99); }
+    .list-thumb {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .list-thumb svg { width: 24px; height: 24px; fill: white; }
+    .list-info { flex: 1; }
+    .list-info h4 { font-size: 13px; color: #333; margin-bottom: 2px; }
+    .list-info p { font-size: 10px; color: #999; margin-bottom: 5px; }
+    .list-info .meta { display: flex; gap: 8px; font-size: 10px; color: #999; }
+    .list-info .meta svg { width: 11px; height: 11px; fill: #4CAF50; margin-right: 2px; }
+    
+    /* ====== 计划页 ====== */
+    .plan-page { background: #f5f5f5; padding-bottom: 90px; display: flex; flex-direction: column; min-height: 100%; }
+    .plan-header { background: linear-gradient(135deg, #4CAF50, #81C784); padding: 16px 20px; color: white; }
+    .plan-header h2 { font-size: 22px; margin-bottom: 3px; }
+    .plan-header p { font-size: 12px; opacity: 0.9; }
+    .plan-content { padding: 14px; flex: 1; overflow-y: auto; }
+    .plan-calendar { background: white; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+    .calendar-week { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .calendar-week:last-child { margin-bottom: 0; }
+    .calendar-day {
+      width: 36px;
+      height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      font-size: 10px;
+      color: #999;
+    }
+    .calendar-day .num { font-size: 14px; font-weight: 600; margin-bottom: 1px; }
+    .calendar-day.completed { background: #E8F5E9; color: #4CAF50; }
+    .calendar-day.completed .num { color: #4CAF50; }
+    .calendar-day.today { background: #4CAF50; color: white; }
+    .calendar-day.today .num { color: white; }
+    .calendar-day .dot { width: 5px; height: 5px; background: #4CAF50; border-radius: 50%; margin-top: 3px; }
+    .plan-progress { background: white; border-radius: 16px; padding: 14px; margin-bottom: 14px; }
+    .progress-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .progress-header h4 { font-size: 13px; color: #333; }
+    .progress-header span { font-size: 12px; color: #4CAF50; }
+    .progress-bar { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #4CAF50, #81C784); width: 35%; border-radius: 3px; }
+    
+    /* ====== 我的页 ====== */
+    .profile-page { background: #f5f5f5; padding-bottom: 90px; display: flex; flex-direction: column; min-height: 100%; }
+    .profile-header { background: linear-gradient(135deg, #4CAF50, #81C784); padding: 30px 20px; color: white; text-align: center; }
+    .profile-avatar {
+      width: 70px;
+      height: 70px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .profile-avatar svg { width: 32px; height: 32px; fill: white; }
+    .profile-name { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+    .profile-level { font-size: 12px; opacity: 0.9; }
+    .profile-stats {
+      display: flex;
+      background: white;
+      margin: -24px 14px 14px;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .profile-stat { flex: 1; text-align: center; }
+    .profile-stat .num { font-size: 20px; font-weight: 700; color: #4CAF50; }
+    .profile-stat .label { font-size: 10px; color: #999; margin-top: 3px; }
+    .profile-stat:not(:last-child) { border-right: 1px solid #eee; }
+    .profile-menu {
+      margin: 0 14px;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f5f5f5;
+      cursor: pointer;
+    }
+    .menu-item:last-child { border-bottom: none; }
+    .menu-item svg { width: 20px; height: 20px; fill: #4CAF50; margin-right: 12px; }
+    .menu-item span { flex: 1; font-size: 14px; color: #333; }
+    .menu-item .arrow { width: 16px; height: 16px; fill: #ccc; }
+    
+    /* ====== 播放页 ====== */
+    .player-page {
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .player-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      color: white;
+    }
+    .player-header svg { width: 20px; height: 20px; fill: white; cursor: pointer; }
+    .player-header h3 { font-size: 14px; font-weight: 500; }
+    .player-video {
+      flex: 1;
+      background: linear-gradient(135deg, #2E7D32, #4CAF50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .player-video svg { width: 60px; height: 60px; fill: white; opacity: 0.9; }
+    .player-video .pause-icon {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .player-video .pause-icon svg { width: 24px; height: 24px; }
+    .player-progress { padding: 16px 16px 8px; }
+    .progress-time { display: flex; justify-content: space-between; font-size: 11px; color: #999; margin-bottom: 6px; }
+    .progress-slider { width: 100%; height: 4px; background: #333; border-radius: 2px; position: relative; cursor: pointer; }
+    .progress-slider .fill { width: 35%; height: 100%; background: #4CAF50; border-radius: 2px; }
+    .player-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      padding: 16px;
+      color: white;
+    }
+    .player-controls svg { width: 22px; height: 22px; fill: white; cursor: pointer; }
+    .player-controls .play-btn { 
+      width: 54px; 
+      height: 54px; 
+      background: #4CAF50; 
+      border-radius: 50%; 
+      display: flex;
+      align-items: center; 
+      justify-content: center; 
+    }
+    .player-controls .play-btn svg { width: 22px; height: 22px; fill: white; }
+    .player-info {
+      background: #222;
+      padding: 16px;
+      border-radius: 20px 20px 0 0;
+    }
+    .player-info h3 { color: white; font-size: 16px; margin-bottom: 6px; }
+    .player-info p { color: #999; font-size: 12px; margin-bottom: 12px; }
+    .player-tags { display: flex; gap: 8px; }
+    .player-tag { padding: 5px 10px; background: #333; color: #999; border-radius: 10px; font-size: 11px; }
+    
+    /* 底部导航 */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      padding-top: 8px;
+      border-top: 1px solid #eee;
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: #999;
+      font-size: 9px;
+      cursor: pointer;
+      padding: 6px 14px;
+      transition: all 0.3s ease;
+    }
+    .nav-item svg { width: 22px; height: 22px; fill: currentColor; }
+    .nav-item.active { color: #4CAF50; }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.8);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 10px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+    <div class="status-bar">
+      <span id="time">12:00</span>
+      <div style="display: flex; gap: 6px;">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M2 22h20V2L2 22z"/></svg>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z"/><circle cx="12" cy="12" r="3"/></svg>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 4h3V2h-3V0h-2v2H4v2h11v4h3v8H5v-8h12zM7 14v-2h10v2H7z"/></svg>
+      </div>
+    </div>
+    
+    <div class="page-container">
+      <!-- 欢迎页 -->
+      <div class="page welcome-page" id="page-welcome">
+        <div class="welcome-logo">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        </div>
+        <div class="welcome-title">FitYoga Now</div>
+        <div class="welcome-subtitle">在家练瑜伽 · 每天15分钟<br>零门槛，适合所有年龄</div>
+        <div class="ob-nav welcome-btn">
+          <button class="btn btn-primary" onclick="nextPage('page-goal')">开始体验</button>
+        </div>
+      </div>
+      
+      <!-- 健身目标 -->
+      <div class="page hidden ob-page" id="page-goal">
+        <div class="ob-progress">
+          <div class="ob-dot"></div>
+          <div class="ob-dot active"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+        </div>
+        <div class="ob-header">
+          <h2>你的健身目标是什么？</h2>
+          <p>可多选，我们会为你推荐合适的课程</p>
+        </div>
+        <div class="ob-options">
+          <div class="ob-option" onclick="toggleOption(this)">
+            <svg viewBox="0 0 24 24"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/></svg>
+            <span>减脂塑形</span>
+          </div>
+          <div class="ob-option" onclick="toggleOption(this)">
+            <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            <span>缓解疼痛</span>
+          </div>
+          <div class="ob-option" onclick="toggleOption(this)">
+            <svg viewBox="0 0 24 24"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
+            <span>提升柔韧</span>
+          </div>
+          <div class="ob-option" onclick="toggleOption(this)">
+            <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            <span>放松助眠</span>
+          </div>
+        </div>
+        <div class="ob-nav">
+          <button class="btn btn-primary" onclick="nextPage('page-trust1')">继续</button>
+        </div>
+      </div>
+      
+      <!-- 信任背书1 -->
+      <div class="page hidden trust-page" id="page-trust1">
+        <div class="ob-progress">
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot active"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+        </div>
+        <div class="trust-icon">
+          <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+        </div>
+        <div class="trust-number">500万+</div>
+        <div class="trust-label">全球用户正在使用</div>
+        <div class="trust-desc">FitYoga帮助世界各地的人们<br>享受瑜伽带来的健康生活</div>
+        <div class="ob-nav">
+          <button class="btn btn-primary" onclick="nextPage('page-experience')">继续</button>
+        </div>
+      </div>
+      
+      <!-- 健身经验 -->
+      <div class="page hidden ob-page" id="page-experience">
+        <div class="ob-progress">
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot active"></div>
+          <div class="ob-dot"></div>
+        </div>
+        <div class="ob-header">
+          <h2>你的健身经验？</h2>
+          <p>选择适合你的难度</p>
+        </div>
+        <div class="ob-options">
+          <div class="ob-option" onclick="selectOnly(this)">
+            <svg viewBox="0 0 24 24"><path d="M12 22c4.97 0 9-4.03 9-9-4.97 0-9 4.03-9 9zM5.6 10.25c0 1.38 1.12 2.5 2.5 2.5.53 0 1.01-.16 1.42-.44l-.02.19c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5l-.02-.19c.4.28.89.44 1.42.44 1.38 0 2.5-1.12 2.5-2.5 0-1-.59-1.85-1.43-2.25.84-.4 1.43-1.25 1.43-2.25 0-1.38-1.12-2.5-2.5-2.5-.53 0-1.01.16-1.42.44l.02-.19C14.5 4.12 13.38 3 12 3S9.5 4.12 9.5 5.5l.02.19c-.4-.28-.89-.44-1.42-.44-1.38 0-2.5 1.12-2.5 2.5 0 1 .59 1.85 1.43 2.25-.84.4-1.43 1.25-1.43 2.25z"/></svg>
+            <span>零基础，从未练过</span>
+          </div>
+          <div class="ob-option" onclick="selectOnly(this)">
+            <svg viewBox="0 0 24 24"><path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
+            <span>偶尔运动，简单尝试过</span>
+          </div>
+          <div class="ob-option" onclick="selectOnly(this)">
+            <svg viewBox="0 0 24 24"><path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/></svg>
+            <span>经常运动，有一定基础</span>
+          </div>
+        </div>
+        <div class="ob-nav">
+          <button class="btn btn-secondary" onclick="prevPage('page-trust1')">上一步</button>
+          <button class="btn btn-primary" onclick="nextPage('page-time')">继续</button>
+        </div>
+      </div>
+      
+      <!-- 时间投入 -->
+      <div class="page hidden ob-page" id="page-time">
+        <div class="ob-progress">
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot active"></div>
+        </div>
+        <div class="ob-header">
+          <h2>每天能投入多少时间？</h2>
+          <p>我们会为你匹配合适的课程</p>
+        </div>
+        <div class="ob-options">
+          <div class="ob-option" onclick="selectOnly(this)">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <span>5-10分钟（碎片时间）</span>
+          </div>
+          <div class="ob-option" onclick="selectOnly(this)">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <span>15-20分钟（标准练习）</span>
+          </div>
+          <div class="ob-option" onclick="selectOnly(this)">
+            <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+            <span>30分钟以上（深度练习）</span>
+          </div>
+        </div>
+        <div class="ob-nav">
+          <button class="btn btn-secondary" onclick="prevPage('page-experience')">上一步</button>
+          <button class="btn btn-primary" onclick="nextPage('page-recommend')">查看推荐</button>
+        </div>
+      </div>
+      
+      <!-- 个性化推荐 -->
+      <div class="page hidden recommend-page" id="page-recommend">
+        <div class="ob-progress">
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot"></div>
+          <div class="ob-dot active"></div>
+        </div>
+        <div class="ob-header" style="text-align: left;">
+          <h2>为你精选的课程</h2>
+          <p>基于你的目标和偏好</p>
+        </div>
+        <div class="recommend-cards">
+          <div class="recommend-card" onclick="showPaywall()">
+            <div class="recommend-thumb" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
+              <svg viewBox="0 0 24 24"><path d="M20 10V8h-4V4h-2v4h-4V4H8v4H4v2h4v4H4v2h4v4h2v-4h4v4h2v-4h4v-2h-4v-4h4zm-6 4h-4v-4h4v4z"/></svg>
+            </div>
+            <div class="recommend-info">
+              <h4>椅子瑜伽·入门基础</h4>
+              <p>零基础首选 · 7个动作</p>
+              <span class="recommend-tag">椅子瑜伽</span>
+            </div>
+          </div>
+          <div class="recommend-card" onclick="showPaywall()">
+            <div class="recommend-thumb" style="background: linear-gradient(135deg, #FF9800, #FFB74D);">
+              <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+            </div>
+            <div class="recommend-info">
+              <h4>办公室肩颈舒缓</h4>
+              <p>缓解久坐不适 · 10分钟</p>
+              <span class="recommend-tag">上班族</span>
+            </div>
+          </div>
+          <div class="recommend-card" onclick="showPaywall()">
+            <div class="recommend-thumb" style="background: linear-gradient(135deg, #5C6BC0, #7986CB);">
+              <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </div>
+            <div class="recommend-info">
+              <h4>睡前助眠放松</h4>
+              <p>改善睡眠质量 · 15分钟</p>
+              <span class="recommend-tag">助眠放松</span>
+            </div>
+          </div>
+        </div>
+        <div class="ob-nav">
+          <button class="btn btn-outline" onclick="showPaywall()">解锁全部18个课程</button>
+        </div>
+      </div>
+      
+      <!-- 订阅墙 -->
+      <div class="page hidden paywall-page" id="page-paywall">
+        <div class="paywall-header">
+          <h2>解锁全部18个精选课程</h2>
+          <p>随时随地，享受专业瑜伽指导</p>
+        </div>
+        <div class="paywall-features">
+          <div class="paywall-feature">
+            <svg viewBox="0 0 24 24"><path d="M18.6 6.62c-1.44 0-2.8.56-3.77 1.53L12 10.66 10.48 12h.01L7.8 14.39c-.64.64-1.49.99-2.4.99-1.87 0-3.39-1.51-3.39-3.38S3.53 8.62 5.4 8.62c.91 0 1.76.35 2.44 1.03l1.13 1 1.51-1.34L9.22 8.2C8.2 7.18 6.84 6.62 5.4 6.62 2.42 6.62 0 9.04 0 12s2.42 5.38 5.4 5.38c1.44 0 2.8-.56 3.77-1.53l2.83-2.5.01.01L13.52 12h-.01l2.69-2.39c.64-.64 1.49-.99 2.4-.99 1.87 0 3.39 1.51 3.39 3.38s-1.52 3.38-3.39 3.38c-.9 0-1.76-.35-2.44-1.03l-1.14-1.01-1.51 1.34 1.27 1.12c1.02 1.01 2.37 1.57 3.82 1.57 2.98 0 5.4-2.41 5.4-5.38s-2.42-5.37-5.4-5.37z"/></svg>
+            <span>无限次练习</span>
+          </div>
+          <div class="paywall-feature">
+            <svg viewBox="0 0 24 24"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8 12.5v-9l6 4.5-6 4.5z"/></svg>
+            <span>高清视频</span>
+          </div>
+          <div class="paywall-feature">
+            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm-8 4H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+            <span>每日提醒</span>
+          </div>
+          <div class="paywall-feature">
+            <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+            <span>进度追踪</span>
+          </div>
+        </div>
+        <div class="paywall-plans">
+          <div class="paywall-plan" onclick="selectPlan(this)">
+            <div class="plan-check"></div>
+            <div class="plan-info">
+              <h4>月度订阅</h4>
+              <p>按月计费</p>
+            </div>
+            <div class="plan-price">$9.99</div>
+          </div>
+          <div class="paywall-plan recommended selected" onclick="selectPlan(this)">
+            <div class="badge">推荐</div>
+            <div class="plan-check"></div>
+            <div class="plan-info">
+              <h4>年度订阅</h4>
+              <p>每月仅$4.42，省70%</p>
+            </div>
+            <div class="plan-price">$52.99<small>/年</small></div>
+          </div>
+          <div class="paywall-plan" onclick="selectPlan(this)">
+            <div class="plan-check"></div>
+            <div class="plan-info">
+              <h4>季度订阅</h4>
+              <p>每季$34.99</p>
+            </div>
+            <div class="plan-price">$34.99<small>/季</small></div>
+          </div>
+        </div>
+        <div class="paywall-trial">
+          <h4>7天免费试用</h4>
+          <p>随时取消，零风险体验</p>
+          <button class="btn-trial" onclick="startTrial()">开始免费试用</button>
+          <div class="paywall-skip" onclick="skipPaywall()">稍后再说</div>
+        </div>
+      </div>
+      
+      <!-- 首页 -->
+      <div class="page hidden home-page" id="page-home">
+        <div class="home-header">
+          <div class="home-greeting">下午好</div>
+          <div class="home-title">准备好今天的练习了吗？</div>
+          <div class="home-stats">
+            <div class="stat-card">
+              <div class="stat-number">7</div>
+              <div class="stat-label">连续练习(天)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">156</div>
+              <div class="stat-label">累计分钟</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-number">12</div>
+              <div class="stat-label">完成课程</div>
+            </div>
+          </div>
+        </div>
+        <div class="home-content">
+          <div class="section-title">
+            今日推荐
+            <span>查看全部</span>
+          </div>
+          <div class="today-card" onclick="showPlayer('椅子瑜伽·晨间唤醒', '椅子瑜伽', '12分钟')">
+            <div class="today-thumb" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
+              <svg viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+              <div class="play-icon">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </div>
+            </div>
+            <div class="today-info">
+              <h4>椅子瑜伽·晨间唤醒</h4>
+              <p>激活身体，提升一天精力</p>
+              <div class="today-meta">
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                  12分钟
+                </span>
+                <span>
+                  <svg viewBox="0 0 24 24"><path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7"/></svg>
+                  10个动作
+                </span>
+                <span class="tag-green">初级</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-title">
+            椅子瑜伽
+            <span>更多</span>
+          </div>
+          <div class="course-scroll">
+            <div class="course-card" onclick="showPlayer('椅子瑜伽·入门基础', '椅子瑜伽', '10分钟')">
+              <div class="course-img" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
+                <svg viewBox="0 0 24 24"><path d="M20 10V8h-4V4h-2v4h-4V4H8v4H4v2h4v4H4v2h4v4h2v-4h4v4h2v-4h4v-2h-4v-4h4zm-6 4h-4v-4h4v4z"/></svg>
+                <span class="duration">10分钟</span>
+              </div>
+              <div class="course-body">
+                <h5>椅子瑜伽·入门基础</h5>
+                <p>零基础首选</p>
+              </div>
+            </div>
+            <div class="course-card" onclick="showPlayer('椅子上的扭转', '椅子瑜伽', '10分钟')">
+              <div class="course-img" style="background: linear-gradient(135deg, #66BB6A, #A5D6A7);">
+                <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+                <span class="duration">10分钟</span>
+              </div>
+              <div class="course-body">
+                <h5>椅子上的扭转</h5>
+                <p>缓解腰部僵硬</p>
+              </div>
+            </div>
+            <div class="course-card" onclick="showPlayer('椅子肩颈深度放松', '椅子瑜伽', '12分钟')">
+              <div class="course-img" style="background: linear-gradient(135deg, #43A047, #66BB6A);">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                <span class="duration">12分钟</span>
+              </div>
+              <div class="course-body">
+                <h5>椅子肩颈深度放松</h5>
+                <p>上班族必备</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-title" style="margin-top: 16px;">
+            上班族
+            <span>更多</span>
+          </div>
+          <div class="course-scroll">
+            <div class="course-card" onclick="showPlayer('办公室肩颈舒缓拉伸', '上班族', '15分钟')">
+              <div class="course-img" style="background: linear-gradient(135deg, #FF9800, #FFB74D);">
+                <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+                <span class="duration">15分钟</span>
+              </div>
+              <div class="course-body">
+                <h5>办公室肩颈舒缓</h5>
+                <p>久坐办公人群</p>
+              </div>
+            </div>
+            <div class="course-card" onclick="showPlayer('办公室午间放松', '上班族', '10分钟')">
+              <div class="course-img" style="background: linear-gradient(135deg, #FFA726, #FFCC80);">
+                <svg viewBox="0 0 24 24"><path d="M18.5 3H6c-1.1 0-2 .9-2 2v5.71c0 3.83 2.95 7.18 6.78 7.29 3.96.12 7.22-3.06 7.22-7v-1h.5c1.93 0 3.5-1.57 3.5-3.5S20.43 3 18.5 3zM16 5v3H6V5h10zm2.5 3H18V5h.5c.83 0 1.5.67 1.5 1.5S19.33 8 18.5 8z"/></svg>
+                <span class="duration">10分钟</span>
+              </div>
+              <div class="course-body">
+                <h5>办公室午间放松</h5>
+                <p>午休时间</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 课程页 -->
+      <div class="page hidden courses-page" id="page-courses">
+        <div class="courses-header">
+          <h2>全部课程</h2>
+          <div class="filter-tabs">
+            <div class="filter-tab active" onclick="filterCourses('全部', this)">全部</div>
+            <div class="filter-tab" onclick="filterCourses('椅子瑜伽', this)">椅子瑜伽</div>
+            <div class="filter-tab" onclick="filterCourses('上班族', this)">上班族</div>
+            <div class="filter-tab" onclick="filterCourses('助眠/腰背', this)">助眠/腰背</div>
+          </div>
+        </div>
+        <div class="courses-list">
+          <div class="course-list-item" onclick="showPlayer('椅子瑜伽·入门基础', '椅子瑜伽', '10分钟')">
+            <div class="list-thumb" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
+              <svg viewBox="0 0 24 24"><path d="M20 10V8h-4V4h-2v4h-4V4H8v4H4v2h4v4H4v2h4v4h2v-4h4v4h2v-4h4v-2h-4v-4h4zm-6 4h-4v-4h4v4z"/></svg>
+            </div>
+            <div class="list-info">
+              <h4>椅子瑜伽·入门基础</h4>
+              <p>Namaste呼吸、颈部环绕、坐姿扭转等基础动作</p>
+              <div class="meta">
+                <span><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 10分钟</span>
+                <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> 初级</span>
+              </div>
+            </div>
+          </div>
+          <div class="course-list-item" onclick="showPlayer('椅子瑜伽·晨间唤醒', '椅子瑜伽', '12分钟')">
+            <div class="list-thumb" style="background: linear-gradient(135deg, #66BB6A, #A5D6A7);">
+              <svg viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+            </div>
+            <div class="list-info">
+              <h4>椅子瑜伽·晨间唤醒</h4>
+              <p>激活身体，提升一天精力</p>
+              <div class="meta">
+                <span><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 12分钟</span>
+                <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> 初级</span>
+              </div>
+            </div>
+          </div>
+          <div class="course-list-item" onclick="showPlayer('办公室肩颈舒缓拉伸', '上班族', '15分钟')">
+            <div class="list-thumb" style="background: linear-gradient(135deg, #FF9800, #FFB74D);">
+              <svg viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z"/></svg>
+            </div>
+            <div class="list-info">
+              <h4>办公室肩颈舒缓拉伸</h4>
+              <p>专门针对久坐办公人群的肩颈问题</p>
+              <div class="meta">
+                <span><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 15分钟</span>
+                <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> 初级</span>
+              </div>
+            </div>
+          </div>
+          <div class="course-list-item" onclick="showPlayer('睡前助眠放松', '助眠/腰背', '18分钟')">
+            <div class="list-thumb" style="background: linear-gradient(135deg, #5C6BC0, #7986CB);">
+              <svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </div>
+            <div class="list-info">
+              <h4>睡前助眠放松</h4>
+              <p>放松身心，改善睡眠质量</p>
+              <div class="meta">
+                <span><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 18分钟</span>
+                <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> 初级</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 计划页 -->
+      <div class="page hidden plan-page" id="page-plan">
+        <div class="plan-header">
+          <h2>我的练习计划</h2>
+          <p>坚持21天，养成运动习惯</p>
+        </div>
+        <div class="plan-content">
+          <div class="plan-calendar">
+            <div class="calendar-week">
+              <div class="calendar-day completed">
+                <span class="num">1</span>
+                <span>一</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">2</span>
+                <span>二</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">3</span>
+                <span>三</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">4</span>
+                <span>四</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">5</span>
+                <span>五</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">6</span>
+                <span>六</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">7</span>
+                <span>日</span>
+              </div>
+            </div>
+            <div class="calendar-week">
+              <div class="calendar-day completed">
+                <span class="num">8</span>
+                <span>一</span>
+              </div>
+              <div class="calendar-day completed">
+                <span class="num">9</span>
+                <span>二</span>
+              </div>
+              <div class="calendar-day today">
+                <span class="num">10</span>
+                <span>三</span>
+              </div>
+              <div class="calendar-day">
+                <span class="num">11</span>
+                <span>四</span>
+              </div>
+              <div class="calendar-day">
+                <span class="num">12</span>
+                <span>五</span>
+              </div>
+              <div class="calendar-day">
+                <span class="num">13</span>
+                <span>六</span>
+              </div>
+              <div class="calendar-day">
+                <span class="num">14</span>
+                <span>日</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="plan-progress">
+            <div class="progress-header">
+              <h4>本周进度</h4>
+              <span>7/14 天</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill"></div>
+            </div>
+          </div>
+          
+          <div class="section-title">
+            今日待完成
+            <span style="color: #FF9800;">1个</span>
+          </div>
+          <div class="course-list-item" onclick="showPlayer('椅子瑜伽·晨间唤醒', '椅子瑜伽', '12分钟')">
+            <div class="list-thumb" style="background: linear-gradient(135deg, #4CAF50, #81C784);">
+              <svg viewBox="0 0 24 24"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41z"/></svg>
+            </div>
+            <div class="list-info">
+              <h4>椅子瑜伽·晨间唤醒</h4>
+              <p>完成即打卡今日目标</p>
+              <div class="meta">
+                <span><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 12分钟</span>
+                <span style="color: #FF9800;">+10积分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 我的页 -->
+      <div class="page hidden profile-page" id="page-profile">
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          </div>
+          <div class="profile-name">Yoga Lover</div>
+          <div class="profile-level">初级练习者</div>
+        </div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="num">156</div>
+            <div class="label">累计分钟</div>
+          </div>
+          <div class="profile-stat">
+            <div class="num">12</div>
+            <div class="label">完成课程</div>
+          </div>
+          <div class="profile-stat">
+            <div class="num">350</div>
+            <div class="label">积分</div>
+          </div>
+        </div>
+        <div class="profile-menu">
+          <div class="menu-item">
+            <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+            <span>练习提醒</span>
+            <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </div>
+          <div class="menu-item">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+            <span>设置</span>
+            <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </div>
+          <div class="menu-item">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+            <span>帮助与反馈</span>
+            <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </div>
+          <div class="menu-item">
+            <svg viewBox="0 0 24 24"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-1h14v1z"/></svg>
+            <span>会员中心</span>
+            <svg class="arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 播放页 -->
+      <div class="page hidden player-page" id="page-player">
+        <div class="player-header">
+          <svg viewBox="0 0 24 24" onclick="closePlayer()"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+          <h3 id="player-title">椅子瑜伽·晨间唤醒</h3>
+          <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        </div>
+        <div class="player-video">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <div class="pause-icon" onclick="togglePlay()">
+            <svg viewBox="0 0 24 24" id="play-icon"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </div>
+        </div>
+        <div class="player-progress">
+          <div class="progress-time">
+            <span id="current-time">4:12</span>
+            <span id="total-time">12:00</span>
+          </div>
+          <div class="progress-slider">
+            <div class="fill"></div>
+          </div>
+        </div>
+        <div class="player-controls">
+          <svg viewBox="0 0 24 24" onclick="showToast('上一动作')"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          <div class="play-btn" onclick="togglePlay()">
+            <svg viewBox="0 0 24 24" id="main-play-icon"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </div>
+          <svg viewBox="0 0 24 24" onclick="showToast('下一动作')"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+        </div>
+        <div class="player-info">
+          <h3 id="player-title2">椅子瑜伽·晨间唤醒</h3>
+          <p id="player-desc">激活身体 · 初级 · 12分钟</p>
+          <div class="player-tags">
+            <span class="player-tag">椅子瑜伽</span>
+            <span class="player-tag">晨间</span>
+            <span class="player-tag">上班族</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 底部导航 -->
+    <div class="bottom-nav" id="bottom-nav" style="display: none;">
+      <div class="nav-item active" onclick="switchTab('home', this)">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>首页</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('courses', this)">
+        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        <span>课程</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('plan', this)">
+        <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>
+        <span>计划</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('profile', this)">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>我的</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Toast -->
+  <div class="toast" id="toast">提示</div>
+
+  <script>
+    let currentPage = 'page-welcome';
+    let isPlaying = false;
+    
+    function updateTime() {
+      const now = new Date();
+      document.getElementById('time').textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+    
+    function nextPage(pageId) {
+      document.getElementById(currentPage).classList.add('hidden-left');
+      document.getElementById(pageId).classList.remove('hidden');
+      currentPage = pageId;
+    }
+    
+    function prevPage(pageId) {
+      document.getElementById(currentPage).classList.add('hidden');
+      document.getElementById(pageId).classList.remove('hidden');
+      currentPage = pageId;
+    }
+    
+    function toggleOption(el) {
+      el.classList.toggle('selected');
+    }
+    
+    function selectOnly(el) {
+      el.parentElement.querySelectorAll('.ob-option').forEach(opt => opt.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    
+    function switchTab(tab, el) {
+      document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+      el.classList.add('active');
+      
+      const pages = ['page-home', 'page-courses', 'page-plan', 'page-profile'];
+      pages.forEach(p => {
+        if (p === 'page-' + tab) {
+          document.getElementById(p).classList.remove('hidden');
+        } else {
+          document.getElementById(p).classList.add('hidden');
+        }
+      });
+      
+      currentPage = 'page-' + tab;
+    }
+    
+    function showPaywall() {
+      nextPage('page-paywall');
+      document.getElementById('bottom-nav').style.display = 'none';
+    }
+    
+    function selectPlan(el) {
+      el.parentElement.querySelectorAll('.paywall-plan').forEach(p => p.classList.remove('selected'));
+      el.classList.add('selected');
+    }
+    
+    function startTrial() {
+      showToast('试用开始！');
+      setTimeout(() => {
+        document.getElementById('page-paywall').classList.add('hidden');
+        document.getElementById('page-home').classList.remove('hidden');
+        document.getElementById('bottom-nav').style.display = 'flex';
+        currentPage = 'page-home';
+      }, 1000);
+    }
+    
+    function skipPaywall() {
+      document.getElementById('page-paywall').classList.add('hidden');
+      document.getElementById('page-home').classList.remove('hidden');
+      document.getElementById('bottom-nav').style.display = 'flex';
+      currentPage = 'page-home';
+    }
+    
+    function filterCourses(category, el) {
+      document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+      el.classList.add('active');
+      showToast('筛选: ' + category);
+    }
+    
+    function showPlayer(title, category, duration) {
+      document.getElementById('player-title').textContent = title;
+      document.getElementById('player-title2').textContent = title;
+      document.getElementById('player-desc').textContent = '激活身体 · 初级 · ' + duration;
+      document.getElementById('page-player').classList.remove('hidden');
+      document.getElementById('bottom-nav').style.display = 'none';
+      currentPage = 'page-player';
+      isPlaying = true;
+      updatePlayIcon();
+    }
+    
+    function closePlayer() {
+      document.getElementById('page-player').classList.add('hidden');
+      document.getElementById('bottom-nav').style.display = 'flex';
+      currentPage = 'page-home';
+      isPlaying = false;
+      updatePlayIcon();
+    }
+    
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      updatePlayIcon();
+      showToast(isPlaying ? '播放中' : '已暂停');
+    }
+    
+    function updatePlayIcon() {
+      const icon = isPlaying ? '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+      document.getElementById('play-icon').innerHTML = icon;
+      document.getElementById('main-play-icon').innerHTML = icon;
+    }
+    
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1500);
+    }
+    
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') {
+        if (currentPage === 'page-welcome') nextPage('page-goal');
+        else if (currentPage === 'page-goal') nextPage('page-trust1');
+        else if (currentPage === 'page-trust1') nextPage('page-experience');
+        else if (currentPage === 'page-experience') nextPage('page-time');
+        else if (currentPage === 'page-time') nextPage('page-recommend');
+      }
+      if (e.key === 'Escape' && currentPage === 'page-player') {
+        closePlayer();
+      }
+    });
+  </script>
+</body>
+</html>
